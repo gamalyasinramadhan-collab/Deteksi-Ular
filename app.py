@@ -65,9 +65,17 @@ class VideoProcessor:
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 
-# Konfigurasi WebRTC STUN Server
+# Konfigurasi WebRTC STUN Server (Diperbarui dengan Server Cadangan agar Lancar di HP/Data Seluler)
 RTC_CONFIG = RTCConfiguration(
-    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    {
+        "iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]},
+            {"urls": ["stun:stun1.l.google.com:19302"]},
+            {"urls": ["stun:stun2.l.google.com:19302"]},
+            {"urls": ["stun:stun3.l.google.com:19302"]},
+            {"urls": ["stun:global.stun.twilio.com:3478"]},
+        ]
+    }
 )
 
 # Widget Kamera
