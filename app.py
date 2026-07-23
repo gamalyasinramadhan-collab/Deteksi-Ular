@@ -38,11 +38,22 @@ class VideoProcessor:
                 # Resize gambar menjadi lebih kecil khusus untuk request API (agar hemat bandwidth)
                 resized_img = cv2.resize(img, (416, 416))
                 
-                # Inference Roboflow
-                results = client.infer(resized_img, model_id="gamals-workspace-j10lj/ularlah-2-yolo11s-t1")
+                # --------------------------------------------------------------------------
+                # INFERENCE ROBOFLOW
+                # Ubah "gamals-workspace-j10lj/ularlah-2-yolo11s-t1" di bawah ini 
+                # jika kamu menemukan model public lain di Roboflow Universe malam ini.
+                # --------------------------------------------------------------------------
+                results = client.infer(
+                    resized_img, 
+                    model_id="gamals-workspace-j10lj/ularlah-2-yolo11s-t1"
+                )
                 
                 # Bounding box dikembalikan ke skala frame asli
                 detections = sv.Detections.from_inference(results)
+                
+                # 🛡️ FILTER CONFIDENCE (Mencegah salah mendeteksi manusia/benda lain)
+                # Hanya mengambil deteksi yang memiliki tingkat keyakinan di atas 50% (0.50)
+                detections = detections[detections.confidence > 0.50]
                 
                 # Menyesuaikan kembali koordinat bbox dari ukuran (416x416) ke ukuran frame asli
                 h_orig, w_orig = img.shape[:2]
@@ -65,7 +76,7 @@ class VideoProcessor:
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 
-# Konfigurasi WebRTC STUN Server (Diperbarui dengan Server Cadangan agar Lancar di HP/Data Seluler)
+# Konfigurasi WebRTC STUN Server (Dengan Server Cadangan agar Lancar di HP/Data Seluler)
 RTC_CONFIG = RTCConfiguration(
     {
         "iceServers": [
