@@ -7,7 +7,7 @@ from inference_sdk import InferenceHTTPClient
 import supervision as sv
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN
+# 1. KONFIGURASI HALAMAN & STATE
 # ==========================================
 st.set_page_config(
     page_title="Sistem Pengurusan & Deteksi Ular",
@@ -15,29 +15,65 @@ st.set_page_config(
     layout="wide"
 )
 
-# ==========================================
-# 2. SIDEBAR NAVIGATION (PILIHAN ROLE)
-# ==========================================
-st.sidebar.title("🐍 Portal Pengurusan Ular")
-st.sidebar.write("Sistem Integrasi Deteksi & Tindakan Darurat")
+# Inisialisasi Session State untuk Navigasi Halaman
+if 'role' not in st.session_state:
+    st.session_state['role'] = None
 
-role = st.sidebar.radio(
-    "Pilih Akses Moda:",
-    [
-        "📱 User (Deteksi & Kecemasan)", 
-        "🏥 Medical Care (Antivenom & AI)", 
-        "🧑‍🚒 Firefighter (Zon Pelepasan Penang)"
-    ]
-)
-
-st.sidebar.markdown("---")
-st.sidebar.caption("Status Sistem: **Mode Demo (Prototype v1.0)**")
+def reset_role():
+    st.session_state['role'] = None
 
 # ==========================================
-# 3. ROLE 1: USER (Pengguna Awam)
+# 2. HALAMAN UTAMA (LANDING PAGE - 3 OPSI)
 # ==========================================
-if role == "📱 User (Deteksi & Kecemasan)":
-    st.title("🐍 Deteksi Ular Real-Time")
+if st.session_state['role'] is None:
+    st.title("🐍 Portal Integrasi Deteksi & Pengurusan Ular")
+    st.write("Sila pilih modul akses mengikut peranan anda untuk memulakan sistem:")
+    st.markdown("---")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown("### 📱 Mode User / Awam")
+        st.info(
+            "Akses fungsi kamera deteksi ular secara *real-time*, panduan pertolongan cemas gigitan, "
+            "dan pautan nombor kecemasan terdekat."
+        )
+        if st.button("🚀 Masuk Mode User", use_container_width=True):
+            st.session_state['role'] = 'user'
+            st.rerun()
+
+    with col2:
+        st.markdown("### 🏥 Mode Medical Care")
+        st.success(
+            "Jadual lengkap racun (venom), senarai antidote/SABU untuk pelbagai jenis ular, "
+            "semakan stok di Hospital Penang, dan AI Assistant."
+        )
+        if st.button("🚀 Masuk Mode Medical Care", use_container_width=True):
+            st.session_state['role'] = 'medical'
+            st.rerun()
+
+    with col3:
+        st.markdown("### 🧑‍🚒 Mode Firefighter")
+        st.warning(
+            "Peta zon pelepasan ular khas di Pulau Pinang, semakan jarak hutan simpan terdekat, "
+            "padanan jenis habitat, dan SOP penangkapan."
+        )
+        if st.button("🚀 Masuk Mode Firefighter", use_container_width=True):
+            st.session_state['role'] = 'firefighter'
+            st.rerun()
+
+    st.markdown("---")
+    st.caption("📌 *Sistem Prototaip Demo v2.0 - Dikuasakan oleh Streamlit & Roboflow AI*")
+
+# ==========================================
+# 3. INTERFACE OPSI 1: USER (Pengguna Awam)
+# ==========================================
+elif st.session_state['role'] == 'user':
+    st.sidebar.button("⬅️ Kembali ke Menu Utama", on_click=reset_role, use_container_width=True)
+    st.sidebar.markdown("---")
+    st.sidebar.write("📌 **Status:** Mode User Aktif")
+
+    st.title("🐍 Deteksi Ular Real-Time (Mode User)")
     st.write("Arahkan kamera ke objek untuk mendeteksi secara langsung.")
 
     col1, col2 = st.columns([2, 1])
@@ -45,7 +81,6 @@ if role == "📱 User (Deteksi & Kecemasan)":
     with col1:
         st.subheader("📷 Kamera Deteksi Live")
         
-        # Initialisasi Roboflow Client
         @st.cache_resource
         def get_inference_client():
             return InferenceHTTPClient(
@@ -107,7 +142,7 @@ if role == "📱 User (Deteksi & Kecemasan)":
         )
 
     with col2:
-        st.subheader("🚨 Kontak Bantuan Darurat")
+        st.subheader("🚨 Bantuan Kecemasan")
         st.error("**Talian Kecemasan Utama:** 999")
         
         st.markdown("### 🚒 Balai Bomba Penang Terdekat")
@@ -116,132 +151,190 @@ if role == "📱 User (Deteksi & Kecemasan)":
         * **BBP George Town:** 04-224 4444
         * **BBP Bayan Lepas:** 04-643 4444
         * **BBP Butterworth:** 04-331 4444
-        * **BBP Seri Balik Pulau:** 04-866 4444
         """)
         
         st.warning("""
-        **⚠️ Pertolongan Cemas Gigitan Ular:**
-        1. Bertenang dan kurangkan pergerakan mangsa.
-        2. Jangan diikat/ditoreh/disedut tempat gigitan.
-        3. Segera bawa ke Hospital Pulau Pinang / Hospital terdekat.
+        **⚠️ Langkah Pertolongan Cemas:**
+        1. Bertenang dan perlahankan pergerakan mangsa.
+        2. Bawa terus ke Hospital Pulau Pinang / Seberang Jaya.
+        3. JANGAN diikat ketat, dipotong, atau disedut.
         """)
 
 # ==========================================
-# 4. ROLE 2: MEDICAL CARE (Tenaga Medis)
+# 4. INTERFACE OPSI 2: MEDICAL CARE
 # ==========================================
-elif role == "🏥 Medical Care (Antivenom & AI)":
-    st.title("🏥 Panduan Perubatan & Semakan Antivenom")
-    st.caption("Pusat rujukan cepat untuk jenis racun (venom), antidote, dan perkhidmatan AI.")
+elif st.session_state['role'] == 'medical':
+    st.sidebar.button("⬅️ Kembali ke Menu Utama", on_click=reset_role, use_container_width=True)
+    st.sidebar.markdown("---")
+    st.sidebar.write("📌 **Status:** Mode Medical Care Aktif")
 
-    tab1, tab2 = st.tabs(["📋 Senarai Antivenom & Spesies", "🤖 AI Medical Assistant"])
+    st.title("🏥 Portal Perubatan & Pengurusan Antidote / Antivenom")
+    st.caption("Pusat Rujukan Klinikal Racun Ular untuk Hospital dan Petugas Kesihatan")
 
-    # Data Dummy Ular & Antivenom
-    data_antivenom = {
-        "Nama Spesies / Ular": [
-            "Naja kaouthia (Ular Senduk)", 
-            "Ophiophagus hannah (Tedung Selar)", 
-            "Trimeresurus purpureomaculatus (Kapak Bakau)", 
-            "Bungarus candidus (Katam Tebu)", 
-            "Malayopython reticulatus (Sawa Batik)"
-        ],
-        "Jenis Bisa (Venom)": [
-            "Neurotoksin (Tinggi)", 
-            "Neurotoksin (Sangat Tinggi)", 
-            "Hemotoksin (Sederhana)", 
-            "Neurotoksin (Tinggi)", 
-            "Tidak Berbisa"
-        ],
-        "Antidote / Serum Sesuai": [
-            "Monovalent Cobra Antivenom / SABU", 
-            "King Cobra Antivenom", 
-            "Green Pit Viper Antivenom", 
-            "Malayan Krait Antivenom", 
-            "Tiada (Rawatan Luka Sahaja)"
-        ],
-        "Stok RS Pulau Pinang": [
-            "Tersedia (12 Vial)", 
-            "Tersedia (5 Vial)", 
-            "Tersedia (8 Vial)", 
-            "Terhad (2 Vial)", 
-            "N/A"
-        ]
-    }
-    df_antivenom = pd.DataFrame(data_antivenom)
+    # Data Lengkap Antivenom & Spesies
+    medical_db = [
+        {
+            "Spesies Ular": "Naja kaouthia (Ular Senduk Monocled)",
+            "Jenis Kategori": "Berbisa Tinggi",
+            "Jenis Venom": "Neurotoksin (Lumpuh Otot/Pernafasan)",
+            "Antidote / Serum Sesuai": "Monovalent Cobra Antivenom / SABU",
+            "Dos Permulaan": "10 Vial (IV Infusion)",
+            "Stok Hospital Penang": "Hospital P.Pinang (15 Vial), Hospital Seberang Jaya (8 Vial)"
+        },
+        {
+            "Spesies Ular": "Ophiophagus hannah (Ular Tedung Selar)",
+            "Jenis Kategori": "Berbisa Sangat Tinggi",
+            "Jenis Venom": "Neurotoksin & Cardiotoksin",
+            "Antidote / Serum Sesuai": "King Cobra Antivenom",
+            "Dos Permulaan": "10 - 15 Vial (IV Infusion)",
+            "Stok Hospital Penang": "Hospital P.Pinang (6 Vial)"
+        },
+        {
+            "Spesies Ular": "Trimeresurus purpureomaculatus (Ular Kapak Bakau)",
+            "Jenis Kategori": "Berbisa Tinggi",
+            "Jenis Venom": "Hemotoksin (Pendarahan / Pendarahan Luar/Dalam)",
+            "Antidote / Serum Sesuai": "Green Pit Viper Antivenom",
+            "Dos Permulaan": "5 Vial (IV Infusion)",
+            "Stok Hospital Penang": "Hospital Seberang Jaya (10 Vial), Hospital Kepala Batas (5 Vial)"
+        },
+        {
+            "Spesies Ular": "Calloselasma rhodostoma (Ular Kapak Bodoh / Malayan Pit Viper)",
+            "Jenis Kategori": "Berbisa Tinggi",
+            "Jenis Venom": "Hemotoksin (Nekrosis Tisu & Pendarahan Severe)",
+            "Antidote / Serum Sesuai": "Malayan Pit Viper Antivenom",
+            "Dos Permulaan": "5 Vial (IV Infusion)",
+            "Stok Hospital Penang": "Hospital Kepala Batas (8 Vial), Hospital P.Pinang (5 Vial)"
+        },
+        {
+            "Spesies Ular": "Bungarus candidus (Ular Katam Tebu / Malayan Krait)",
+            "Jenis Kategori": "Berbisa Tinggi",
+            "Jenis Venom": "Neurotoksin Pre-synaptic (Sangat Bahaya)",
+            "Antidote / Serum Sesuai": "Malayan Krait Antivenom / Polyvalent Elapid",
+            "Dos Permulaan": "10 Vial (IV Infusion)",
+            "Stok Hospital Penang": "Hospital P.Pinang (4 Vial)"
+        },
+        {
+            "Spesies Ular": "Malayopython reticulatus (Ular Sawa Batik)",
+            "Jenis Kategori": "Tidak Berbisa",
+            "Jenis Venom": "Tiada Racun (Bahaya Gigitan / Jangkitan Bakteria)",
+            "Antidote / Serum Sesuai": "Tiada Antivenom (Rawatan Tetanus & Antiseptik)",
+            "Dos Permulaan": "Pembersihan Luka + Tetanus Toxoid",
+            "Stok Hospital Penang": "Tersedia di Semua Hospital"
+        },
+        {
+            "Spesies Ular": "Ahaetulla prasina (Ular Pucuk)",
+            "Jenis Kategori": "Berbisa Ringan",
+            "Jenis Venom": "Mild Neurotoksin / Cytotoksin",
+            "Antidote / Serum Sesuai": "Tiada Antidote Khusus (Rawatan Simptomatik)",
+            "Dos Permulaan": "Pemerhatian Klinal 4-6 Jam",
+            "Stok Hospital Penang": "Tersedia di Semua Hospital"
+        }
+    ]
+    df_med = pd.DataFrame(medical_db)
 
-    with tab1:
-        st.subheader("📊 Pangkalan Data Antivenom")
-        st.dataframe(df_antivenom, use_container_width=True)
+    tab_table, tab_ai = st.tabs(["📋 Jadual Antidote & Stok Hospital", "🤖 AI Medical Consultant"])
 
-    with tab2:
-        st.subheader("🤖 AI Antidote Assistant")
-        st.write("Tanyakan jenis ular atau gejala untuk mendapatkan cadangan antidote secara cepat.")
-        
-        selected_snake = st.selectbox(
-            "Pilih atau taip jenis ular hasil deteksi:",
-            ["- Pilih Ular -"] + list(df_antivenom["Nama Spesies / Ular"])
-        )
-        
-        user_query = st.text_input("Atau masukkan soalan anda (Contoh: 'Ular Kapak perlukan antivenom apa?')")
+    with tab_table:
+        st.subheader("🔍 Carian & Database Antivenom")
+        search_query = st.text_input("Cari spesies ular atau jenis racun (contoh: 'Neurotoksin' atau 'Kapak'):")
 
-        if st.button("Cari Antidote / Tanya AI"):
-            if selected_snake != "- Pilih Ular -":
-                row = df_antivenom[df_antivenom["Nama Spesies / Ular"] == selected_snake].iloc[0]
-                st.success(f"**Hasil AI untuk {selected_snake}:**")
+        if search_query:
+            filtered_df = df_med[df_med.apply(lambda row: row.astype(str).str.contains(search_query, case=False).any(), axis=1)]
+            st.dataframe(filtered_df, use_container_width=True)
+        else:
+            st.dataframe(df_med, use_container_width=True)
+
+        st.info("💡 **Nota Kesihatan:** Pemberian antivenom mesti dipantau rapi untuk mengelakkan reaksi anafilaksis (alahan teruk).")
+
+    with tab_ai:
+        st.subheader("🤖 AI Medical Consultant (Simulasi)")
+        st.write("Gunakan pembantu AI ini untuk mendapatkan panduan persediaan rawatan mengikut simptom atau spesifikasi ular.")
+
+        selected_snake_ai = st.selectbox("Pilih Spesies Ular yang Dikesan / Disyaki:", ["- Pilih Spesies -"] + list(df_med["Spesies Ular"]))
+        symptoms = st.multiselect("Pilih Simptom Mangsa saat ini:", ["Pendarahan tidak berhenti", "Kesukaran bernafas / Kelopak mata layu", "Bengkak teruk / Tisu menghitam", "Sakit biasa di kawasan gigitan"])
+
+        if st.button("Dapatkan Cadangan Rawatan AI"):
+            if selected_snake_ai != "- Pilih Spesies -":
+                detail = df_med[df_med["Spesies Ular"] == selected_snake_ai].iloc[0]
+                st.success(f"### 📋 Panduan AI untuk {selected_snake_ai}")
                 st.markdown(f"""
-                * **Jenis Bisa:** {row['Jenis Bisa (Venom)']}
-                * **Cadangan Antidote:** `{row['Antidote / Serum Sesuai']}`
-                * **Status Stok Hospital Pulau Pinang:** {row['Stok RS Pulau Pinang']}
+                * **Status Bisa:** `{detail['Jenis Kategori']}`
+                * **Jenis Venom Utama:** {detail['Jenis Venom']}
+                * **Cadangan Antidote Sesuai:** **{detail['Antidote / Serum Sesuai']}**
+                * **Dos Recommended:** {detail['Dos Permulaan']}
+                * **Lokasi Stok Terdekat (Penang):** {detail['Stok Hospital Penang']}
                 """)
-            elif user_query:
-                st.info(f"**Simulasi Respons AI untuk:** '{user_query}'")
-                st.write("🤖 *Berdasarkan analisis pantas: Untuk gigitan jenis Ular Kapak (Pit Viper), antidote yang sesuai adalah **Green Pit Viper Antivenom**. Pastikan pemantauan darah (coagulation profile) dilakukan segera.*")
             else:
-                st.warning("Sila pilih jenis ular atau masukkan soalan terlebih dahulu.")
+                st.warning("Sila pilih spesies ular terlebih dahulu.")
 
 # ==========================================
-# 5. ROLE 3: FIREFIGHTER (Abam Bomba)
+# 5. INTERFACE OPSI 3: FIREFIGHTER
 # ==========================================
-elif role == "🧑‍🚒 Firefighter (Zon Pelepasan Penang)":
-    st.title("🧑‍🚒 Panduan Pelepasan Ular (Kawasan Penang)")
-    st.caption("Lokasi zon pelepasan habitat semula jadi terdekat untuk operasi penangkapan di Penang.")
+elif st.session_state['role'] == 'firefighter':
+    st.sidebar.button("⬅️ Kembali ke Menu Utama", on_click=reset_role, use_container_width=True)
+    st.sidebar.markdown("---")
+    st.sidebar.write("📌 **Status:** Mode Firefighter Aktif")
 
-    # Data Lokasi Pelepasan Pulau Pinang
-    release_sites = pd.DataFrame({
-        'Nama Lokasi': [
-            'Taman Negara Pulau Pinang (Teluk Bahang)', 
-            'Hutan Simpan Bukit Mertajam (Cherok Tokun)', 
-            'Hutan Lipur Bukit Panchor (Nibong Tebal)',
-            'Kawasan Hutan Simpan Pantai Acheh'
-        ],
-        'Sesuai Untuk Spesies': [
-            'Ular Sawa, Ular Tedung, Ular Pucuk',
-            'Ular Kapak, Ular Katam, Ular Sawa',
-            'Ular Sawa, Ular Air, Ular Tedung',
-            'Ular Berbisa Tinggi & Ular Darat'
-        ],
-        'Radius dari Bandar': ['25 km dari George Town', '12 km dari Butterworth', '20 km dari Seberang Jaya', '30 km dari Bayan Lepas'],
-        'lat': [5.4600, 5.3621, 5.1581, 5.4200],
-        'lon': [100.1983, 100.4908, 100.4870, 100.1800]
-    })
+    st.title("🧑‍🚒 Panduan Operasi & Pelepasan Ular (Kawasan Penang)")
+    st.caption("Modul Khusus Bomba / APM untuk Lokasi Pelepasan Habitat Selamat di Pulau Pinang")
 
-    col_map, col_list = st.columns([2, 1])
+    # Data Lokasi Hutan Simpan Penang
+    penang_sites = pd.DataFrame([
+        {
+            "Nama Lokasi": "Taman Negara Pulau Pinang (Teluk Bahang)",
+            "Kesesuaian Ular": "Ular Sawa Batik, Ular Tedung, Ular Pucuk",
+            "Zon Bahaya": "Sangat Jauh dari Pemukiman (Sesuai)",
+            "Jarak dari Georgetown": "22 km",
+            "lat": 5.4600,
+            "lon": 100.1983
+        },
+        {
+            "Nama Lokasi": "Hutan Simpan Cherok Tokun (Bukit Mertajam)",
+            "Kesesuaian Ular": "Ular Kapak, Ular Katam, Ular Sawa",
+            "Zon Bahaya": "Hutan Tebal Seberang Perai",
+            "Jarak dari Georgetown": "28 km",
+            "lat": 5.3621,
+            "lon": 100.4908
+        },
+        {
+            "Nama Lokasi": "Hutan Lipur Bukit Panchor (Nibong Tebal)",
+            "Kesesuaian Ular": "Ular Sawa, Ular Air, Ular Berbisa Sedang",
+            "Zon Bahaya": "Kawasan Selatan Penang",
+            "Jarak dari Georgetown": "45 km",
+            "lat": 5.1581,
+            "lon": 100.4870
+        },
+        {
+            "Nama Lokasi": "Hutan Simpan Pantai Acheh (Balik Pulau)",
+            "Kesesuaian Ular": "Ular Berbisa Tinggi (Tedung Selar / Kapak Bakau)",
+            "Zon Bahaya": "Zon Konservasi Terpencil",
+            "Jarak dari Georgetown": "30 km",
+            "lat": 5.4200,
+            "lon": 100.1800
+        }
+    ])
 
-    with col_map:
-        st.subheader("🗺️ Peta Zon Pelepasan (Penang)")
-        st.map(release_sites[['lat', 'lon']], zoom=10)
+    col_left, col_right = st.columns([3, 2])
 
-    with col_list:
-        st.subheader("📍 Senarai Lokasi Terdekat")
-        for idx, row in release_sites.iterrows():
-            with st.expander(f"🌲 {row['Nama Lokasi']}"):
-                st.write(f"**Spesies Sesuai:** {row['Sesuai Untuk Spesies']}")
-                st.write(f"**Jarak:** {row['Radius dari Bandar']}")
-                st.button(f"Buka Navigasi (Google Maps)", key=f"btn_{idx}")
+    with col_left:
+        st.subheader("🗺️ Peta Interaktif Zon Pelepasan (Penang)")
+        st.map(penang_sites[['lat', 'lon']], zoom=10)
+
+    with col_right:
+        st.subheader("📍 Senarai Lokasi Hutan Simpan")
+        for idx, site in penang_sites.iterrows():
+            with st.expander(f"🌲 {site['Nama Lokasi']}"):
+                st.write(f"**Sesuai Untuk:** {site['Kesesuaian Ular']}")
+                st.write(f"**Status Zon:** {site['Zon Bahaya']}")
+                st.write(f"**Jarak:** {site['Jarak dari Georgetown']}")
+                st.button(f"🧭 Buka Navigasi Google Maps", key=f"map_btn_{idx}")
 
     st.markdown("---")
-    st.subheader("📝 Prosedur Operasi Standard (SOP) Pelepasan")
-    st.markdown("""
-    1. Pastikan lokasi pelepasan sekurang-kurangnya **5 km dari kawasan pemukiman penduduk**.
-    2. Lepaskan ular berbisa pada waktu yang sesuai dengan sifat spesiesnya (contoh: *Nocturnal* pada waktu malam).
-    3. Catat jenis spesies dan jumlah ular yang dilepaskan ke dalam log Jabatan.
-    """)
+    st.subheader("📋 Senarai Semak SOP Pelepasan Satwa (Bomba Penang)")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.checkbox("1. Pengesahan Jenis Ular")
+    with c2:
+        st.checkbox("2. Radius Minima 5 km dari Rumah")
+    with c3:
+        st.checkbox("3. Rekod Log Operasi JBPM")
